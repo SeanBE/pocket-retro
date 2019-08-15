@@ -34,7 +34,8 @@ def get_articles():
     articles = list(content['list'].values())
     output = [{
         'id': a['item_id'],
-        'title': a.get('resolved_title', a.get('given_title')) or a['item_id'],
+        'excerpt': a.get('excerpt', ''),
+        'title': a.get('resolved_title') or a.get('given_title') or a['item_id'],
         'url': a.get('resolved_url', a.get('given_url')),
     } for a in articles]
     return {'articles': output}

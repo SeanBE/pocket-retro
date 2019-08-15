@@ -11391,6 +11391,10 @@ video {
   z-index: auto;
 }
 
+body {
+  background: black;
+}
+
 @media (min-width: 640px) {
   .sm\:sr-only {
     position: absolute;
@@ -54438,4 +54442,3 @@ video {
     z-index: auto;
   }
 }
-

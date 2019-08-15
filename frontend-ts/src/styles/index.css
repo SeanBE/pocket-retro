@@ -4,3 +4,6 @@
 
 @tailwind utilities;
 
+body {
+  background: black;
+}

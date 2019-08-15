@@ -1,26 +1,70 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
+// http://tilde.club/
 // setup tailwind https://blog.logrocket.com/create-react-app-and-tailwindcss/
+// set  autonoindent
+
+// TODO: if articles empty => fetch more.
+// TODO: use set for archived ids to avoid deleting wrong index.
+// BUILD AND SERVE.
+
+interface Article {
+  id: string,
+  title: string,
+  url: string,
+  excerpt: string
+}
 
 const App: React.FC = () => {
+  const [offset, setOffset]:[number, Function] = useState(0);
+  const [allArticles, setArticles]:[Article[], Function] = useState([]);
+  const [isFetching, setIsFetching]:[boolean, Function] = useState(true);
+
+  useEffect(() => {
+    fetch(`/articles?offset=0`)
+      .then(res => res.json())
+      .then(({ articles }: { articles: Article[] }) => {
+          setArticles((existing: Article[]) => {
+              return [...existing, ...articles];
+              });
+          setOffset((offset: number) => offset + articles.length);
+      })
+      .then(() => setIsFetching(false));
+  }, []);
+
+  const handleClick = (index:number) => {
+    const article: Article = allArticles[index];
+    fetch(`/articles/${article.id}`, {method:'DELETE'})
+     .then(() => {
+         setArticles((articles: Article[]) => {
+           return [...articles.slice(0, index), ...articles.slice(index + 1)]
+           });
+     });
+  };
+
   return (
-<div className="App" >
-    <div className="w-full max-w-md bg-gray-800" >
-      <form action="" className=" bg-white shadow-md rounded px-8 py-8 pt-8">
-        <div className="px-4 pb-4">
-          <label htmlFor="email" className="text-sm block font-bold  pb-2">EMAIL ADDRESS</label>
-          <input type="email" name="email" id="" className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline border-blue-300 " placeholder="Johnbull@example.com"/>
+      <div className="h-screen flex items-center flex-col font-mono p-1">
+        <div className="sm:w-2/3 md:w-1/2 text-center bg-orange-500 uppercase font-bold mt-4">
+          $ WELCOME TO POCKET RETRO
         </div>
-        <div  className="px-4 pb-4">
-          <label htmlFor="password" className="text-sm block font-bold pb-2">PASSWORD</label>
-          <input type="password" name="email" id="" className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline border-blue-300" placeholder="Enter your password"/>
-        </div>
-        <div>
-          <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="button">Sign In</button>
-        </div>
-      </form>
+        <p className="sm:w-2/3 md:w-1/2 text-center bg-orange-500 font-bold mt-4">
+          Application will attempt to retrieve articles untill exhausted.
+        </p>
+        <table className="sm:w-2/3 md:w-1/2 table border-orange-500 mt-4 p-2 border-2 mb-4">
+          <tbody className="text-orange-500 font-thin font-base">
+            {allArticles.map((article: Article, idx: number) => (
+              <tr key={article.id}>
+                <td 
+                  onClick={() => handleClick(idx)}
+                  className="p-1 cursor-pointer hover:bg-orange-500 hover:text-black"
+                >
+                  <a href={article.url} rel="noopener noreferrer" target="_blank">{article.title}</a>
+                </td>
+              </tr>
+            ))}
+            {isFetching && (<tr><td valign="top">Loading...</td></tr>)}
+        </tbody></table>
     </div>
-  </div>
   );
 }
 
