@@ -6,5 +6,6 @@ RUN pip install bottle requests
 COPY . .
 WORKDIR frontend
 RUN yarn
+# run yarn build and use serve instead...
 
 CMD nohup bash -c "python3 ../api.py &" & yarn start

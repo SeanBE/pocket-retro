@@ -28,6 +28,7 @@ def get_articles():
 
     rv = requests.post(GET_URL, data=req_data)
     content = rv.json()
+    print(content)
     if not content['list']:
         return {'articles': []}
     articles = list(content['list'].values())

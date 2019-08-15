@@ -1,16 +1,14 @@
-import { VariableSizeList as List } from 'react-window';
 import React from 'react';
 import './App.css';
 
 export default class App extends React.Component {
 
   state = {
+    limit: 25,
     offset: 0,
-    articles:[],
+    articles: [],
     fetching: false,
-    archivedById:{
-
-    }
+    archivedById: {}
   }
 
   
@@ -62,11 +60,6 @@ export default class App extends React.Component {
             </li>
           ))}
         </ul> 
-
-
-
-
-
       </div>
     );
   }
