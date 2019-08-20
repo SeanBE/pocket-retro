@@ -30,7 +30,7 @@ const App: React.FC = () => {
   useEffect(
     () => {
       if (!isFetching) return;
-      fetch(`/articles?offset=0&limit=15`)
+      fetch(`/api/articles?offset=0&limit=15`)
         .then(res => res.json())
         .then(({ articles }: { articles: Article[] }) => {
           if (articles.length === 0) {
@@ -46,7 +46,7 @@ const App: React.FC = () => {
   const handleClick = (id: string) => {
     // not waiting on api response. If it fails..it will come back.
     // TODO: but what happens if every delete fails?
-    fetch(`/articles/${id}`, { method: "DELETE" });
+    fetch(`/api/articles/${id}`, { method: "DELETE" });
     setArticles((existing: Article[]) => existing.filter(a => a.id !== id));
     //setArchivedIds((ids: Set<string>) => new Set([...ids, id]));
   };
