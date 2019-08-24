@@ -1,6 +1,5 @@
 FROM nikolaik/python-nodejs:python3.6-nodejs10
 
-ENV POCKET_ACCESS_TOKEN
 RUN pip install bottle requests
 
 COPY . .
