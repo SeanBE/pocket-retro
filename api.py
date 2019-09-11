@@ -29,17 +29,19 @@ def get_articles():
     rv = requests.post(GET_URL, data=req_data)
     content = rv.json()
 
-    if not content['list']:
-        return {'articles': []}
+    try:
+        articles = list(content['list'].values())
+    except KeyError:
+        articles = []
 
-    articles = list(content['list'].values())
-    output = [{
-        'id': a['item_id'],
-        'excerpt': a.get('excerpt', ''),
-        'title': a.get('resolved_title') or a.get('given_title') or a['item_id'],
-        'url': a.get('resolved_url', a.get('given_url')),
-    } for a in articles]
-    return {'articles': output}
+    return {
+        'articles': [{
+            'id': a['item_id'],
+            'excerpt': a.get('excerpt', ''),
+            'url': a.get('resolved_url', a.get('given_url')),
+            'title': a.get('resolved_title') or a.get('given_title'),
+        } for a in articles]
+    }
 
 
 @bottle.route('/articles/<article_id>', method=['DELETE'])

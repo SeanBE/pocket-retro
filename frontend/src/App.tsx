@@ -38,12 +38,10 @@ const App: React.FC = () => {
   );
 
   const handleClick = (id: string) => {
-    // TODO: introduce max timeout to avoid waiting on event. 
+    // list will only contain at most 10 elements so filter is fine.
+    setArticles((existing: Article[]) => existing.filter(a => a.id !== id));
     fetch(`/api/articles/${id}`, { method: "DELETE" })
-      .then(() => {
-          // list will only contain at most 10 elements so filter is fine.
-          setArticles((existing: Article[]) => existing.filter(a => a.id !== id));
-      })
+      .catch(() => setErrorMessage('Failure to archive article. Check API.'));
   };
 
   return (
