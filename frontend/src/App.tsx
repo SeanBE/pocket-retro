@@ -40,16 +40,17 @@ const App: React.FC = () => {
   const handleClick = (id: string) => {
     // list will only contain at most 10 elements so filter is fine.
     setArticles((existing: Article[]) => existing.filter(a => a.id !== id));
-    fetch(`/api/articles/${id}`, { method: "DELETE" })
-      .catch(() => setErrorMessage('Failure to archive article. Check API.'));
+    fetch(`/api/articles/${id}`, { method: "DELETE" }).catch(() =>
+      setErrorMessage("Failure to archive article. Check API.")
+    );
   };
 
   return (
     <div className="h-screen flex items-center flex-col font-mono p-1">
-      <div className="sm:w-2/3 md:w-1/2 text-center bg-orange-500 uppercase font-bold mt-4">
+      <div className="flex-grow-0 sm:w-2/3 md:w-1/2 text-center bg-orange-500 uppercase font-bold mt-4">
         $ WELCOME TO POCKET RETRO
       </div>
-      <p className="sm:w-2/3 md:w-1/2 text-center bg-orange-500 font-bold mt-4">
+      <p className="flex-grow-0 sm:w-2/3 md:w-1/2 text-center bg-orange-500 font-bold mt-4">
         Application will attempt to retrieve articles untill exhausted.
       </p>
       <table className="sm:w-2/3 md:w-1/2 table border-orange-500 mt-4 p-2 border-2 mb-4">
