@@ -3,35 +3,111 @@ import json
 import requests
 import bottle
 
+POCKET_HEADERS = {'X-Accept': 'application/json'}
+
 GET_URL = 'https://getpocket.com/v3/get'
 ARCHIVE_URL = 'https://getpocket.com/v3/send'
+REQUEST_URL = 'https://getpocket.com/v3/oauth/request'
+AUTHORIZE_URL = 'https://getpocket.com/v3/oauth/authorize'
 
-CONSUMER_KEY = os.environ['POCKET_CONSUMER_KEY']
-ACCESS_TOKEN = os.environ['POCKET_ACCESS_TOKEN']
+
+class JSONErrorBottle(bottle.Bottle):
+    """JSONErrorBottle represents Bottle object with JSON error handler"""
+
+    def default_error_handler(self, res):
+        bottle.response.content_type = 'application/json'
+        return json.dumps({
+            'error': res.body,
+            'status_code': res.status_code
+        })
 
 
-@bottle.route('/articles')
-def get_articles():
-    query_args = dict(bottle.request.query)
-    limit = query_args.get('limit', 25)
-    offset = query_args.get('offset', 0)
+app = JSONErrorBottle()
 
-    req_data = dict(
-        consumer_key=CONSUMER_KEY,
-        access_token=ACCESS_TOKEN,
-        count=limit,
-        offset=offset,
-        detailType='simple',
-        state='unread',
-        sort='newest'
-    )
+
+def authenticated(func):
+    def wrapped(*args, **kwargs):
+        try:
+            key = bottle.request.cookies['consumer_key']
+            token = bottle.request.cookies['access_token']
+        except KeyError:
+            bottle.abort(403, 'failed getting cookie')
+        credentials = dict(consumer_key=key, access_token=token)
+        return func(credentials, *args, **kwargs)
+    return wrapped
+
+
+@app.post('/ouath/request')
+def request_ouath():
+    forms = bottle.request.forms
+    try:
+        consumer_key = forms['consumer_key']
+    except KeyError:
+        bottle.abort(400, 'requires consumer key')
+
+    REDIRECT_URI = 'http://localhost'
+    post_body = dict(redirect_uri=REDIRECT_URI, consumer_key=consumer_key)
+    rv = requests.post(REQUEST_URL, json=post_body, headers=POCKET_HEADERS)
+
+    try:
+        req_token = rv.json()['code']
+    except (KeyError, json.decoder.JSONDecodeError):
+        bottle.abort(rv.status_code, rv.text)
+
+    LINK = 'https://getpocket.com/auth/authorize' \
+        f'?request_token={req_token}&redirect_uri={REDIRECT_URI}'
+
+    return {'link': LINK, 'request_token': req_token}
+
+
+@app.post('/ouath/authorize')
+def authorize_oauth():
+    forms = bottle.request.forms
+    try:
+        req_token = forms['request_token']
+        consumer_key = forms['consumer_key']
+    except KeyError:
+        bottle.abort(400, 'requires consumer key and request token')
+
+    auth_body = dict(consumer_key=consumer_key, code=req_token)
+    rv = requests.post(AUTHORIZE_URL, json=auth_body, headers=POCKET_HEADERS)
+    try:
+        access_token = rv.json()['access_token']
+    except (KeyError, json.decoder.JSONDecodeError):
+        bottle.abort(rv.status_code, rv.text)
+
+    bottle.response.set_cookie(
+        name='consumer_key', value=consumer_key, httponly=True, path='/')
+    bottle.response.set_cookie(
+        name='access_token', value=access_token, httponly=True, path='/')
+    return {}
+
+
+@app.get('/articles')
+@authenticated
+def get_articles(credentials):
+    query_args = bottle.request.query
+    limit = query_args.get('limit', default=25)
+    offset = query_args.get('offset', default=0)
+
+    req_data = {
+        **credentials,
+        'count': limit,
+        'offset': offset,
+        'detailType': 'simple',
+        'state': 'unread',
+        'sort': 'newest'
+    }
 
     rv = requests.post(GET_URL, data=req_data)
-    content = rv.json()
+    try:
+        content = rv.json()
+    except json.decoder.JSONDecodeError:
+        bottle.abort(rv.status_code, rv.text)
 
     try:
         articles = list(content['list'].values())
-    except KeyError:
+    except AttributeError:
         articles = []
 
     return {
@@ -44,15 +120,19 @@ def get_articles():
     }
 
 
-@bottle.route('/articles/<article_id>', method=['DELETE'])
-def archive_article(article_id):
-    requests.post(
+@app.delete('/articles/<article_id>')
+@authenticated
+def archive_article(credentials, article_id):
+    rv = requests.post(
         ARCHIVE_URL,
-        data=dict(
-            consumer_key=CONSUMER_KEY,
-            access_token=ACCESS_TOKEN,
-            actions=json.dumps([{'action': 'archive', 'item_id': article_id}]))
+        data={
+            **credentials,
+            'actions': json.dumps([{'action': 'archive', 'item_id': article_id}])}
     )
+
+    bottle.response.status = rv.status_code
+    bottle.response.content_type = 'application/json'
     return {}
 
-bottle.run(host='0.0.0.0', port=8080, debug=True)
+
+app.run(host='0.0.0.0', port=8080)
