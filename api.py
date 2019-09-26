@@ -31,7 +31,7 @@ def authenticated(func):
             key = bottle.request.cookies['consumer_key']
             token = bottle.request.cookies['access_token']
         except KeyError:
-            bottle.abort(403, 'failed getting cookie')
+            bottle.abort(403, 'failed getting cookies')
         credentials = dict(consumer_key=key, access_token=token)
         return func(credentials, *args, **kwargs)
     return wrapped
@@ -57,19 +57,22 @@ def request_ouath():
     LINK = 'https://getpocket.com/auth/authorize' \
         f'?request_token={req_token}&redirect_uri={REDIRECT_URI}'
 
-    return {'link': LINK, 'request_token': req_token}
+    bottle.response.set_cookie(
+        name='consumer_key', value=consumer_key, httponly=True, path='/')
+    bottle.response.set_cookie(
+        name='request_token', value=request_token, httponly=True, path='/')
+    return {'link': LINK}
 
 
 @app.post('/ouath/authorize')
 def authorize_oauth():
-    forms = bottle.request.forms
     try:
-        req_token = forms['request_token']
-        consumer_key = forms['consumer_key']
+        key = bottle.request.cookies['consumer_key']
+        token = bottle.request.cookies['access_token']
     except KeyError:
-        bottle.abort(400, 'requires consumer key and request token')
+        bottle.abort(403, 'failed getting cookies')
 
-    auth_body = dict(consumer_key=consumer_key, code=req_token)
+    auth_body = dict(consumer_key=key, code=token)
     rv = requests.post(AUTHORIZE_URL, json=auth_body, headers=POCKET_HEADERS)
     try:
         access_token = rv.json()['access_token']
@@ -77,10 +80,8 @@ def authorize_oauth():
         bottle.abort(rv.status_code, rv.text)
 
     bottle.response.set_cookie(
-        name='consumer_key', value=consumer_key, httponly=True, path='/')
-    bottle.response.set_cookie(
         name='access_token', value=access_token, httponly=True, path='/')
-    return {}
+    return rv.status_code
 
 
 @app.get('/articles')
