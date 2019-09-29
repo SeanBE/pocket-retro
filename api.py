@@ -18,7 +18,6 @@ class JSONErrorBottle(bottle.Bottle):
         bottle.response.content_type = 'application/json'
         return json.dumps({
             'error': res.body,
-            'status_code': res.status_code
         })
 
 
@@ -37,16 +36,17 @@ def authenticated(func):
     return wrapped
 
 
-@app.post('/ouath/request')
-def request_ouath():
+@app.post('/oauth/request')
+def request_oauth():
     forms = bottle.request.forms
     try:
         consumer_key = forms['consumer_key']
+        redirect_uri = forms['redirect_uri']
     except KeyError:
         bottle.abort(400, 'requires consumer key')
 
     REDIRECT_URI = 'http://localhost'
-    post_body = dict(redirect_uri=REDIRECT_URI, consumer_key=consumer_key)
+    post_body = dict(redirect_uri=redirect_uri, consumer_key=consumer_key)
     rv = requests.post(REQUEST_URL, json=post_body, headers=POCKET_HEADERS)
 
     try:
@@ -54,21 +54,21 @@ def request_ouath():
     except (KeyError, json.decoder.JSONDecodeError):
         bottle.abort(rv.status_code, rv.text)
 
-    LINK = 'https://getpocket.com/auth/authorize' \
-        f'?request_token={req_token}&redirect_uri={REDIRECT_URI}'
+    link = 'https://getpocket.com/auth/authorize' \
+        f'?request_token={req_token}&redirect_uri={redirect_uri}'
 
     bottle.response.set_cookie(
         name='consumer_key', value=consumer_key, httponly=True, path='/')
     bottle.response.set_cookie(
-        name='request_token', value=request_token, httponly=True, path='/')
-    return {'link': LINK}
+        name='request_token', value=req_token, httponly=True, path='/')
+    return {'link': link}
 
 
-@app.post('/ouath/authorize')
+@app.post('/oauth/authorize')
 def authorize_oauth():
     try:
         key = bottle.request.cookies['consumer_key']
-        token = bottle.request.cookies['access_token']
+        token = bottle.request.cookies['request_token']
     except KeyError:
         bottle.abort(403, 'failed getting cookies')
 
@@ -81,7 +81,8 @@ def authorize_oauth():
 
     bottle.response.set_cookie(
         name='access_token', value=access_token, httponly=True, path='/')
-    return rv.status_code
+    bottle.response.status = rv.status_code
+    return {}
 
 
 @app.get('/articles')
