@@ -17,7 +17,7 @@ class JSONErrorBottle(bottle.Bottle):
     def default_error_handler(self, res):
         bottle.response.content_type = 'application/json'
         return json.dumps({
-            'error': res.body,
+            'message': res.body,
         })
 
 
