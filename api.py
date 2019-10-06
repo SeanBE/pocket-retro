@@ -108,18 +108,20 @@ def get_articles(credentials):
         bottle.abort(rv.status_code, rv.text)
 
     try:
-        articles = list(content['list'].values())
+        items = list(content['list'].values())
     except AttributeError:
-        articles = []
+        items = []
 
-    return {
-        'articles': [{
-            'id': a['item_id'],
-            'excerpt': a.get('excerpt', ''),
-            'url': a.get('resolved_url', a.get('given_url')),
-            'title': a.get('resolved_title') or a.get('given_title'),
-        } for a in articles]
-    }
+    def build_article(obj):
+        url = obj.get('resolved_url') or obj.get('given_url')
+        return {
+            'url': url,
+            'id': obj['item_id'],
+            'excerpt': obj.get('excerpt', ''),
+            'title': obj.get('resolved_title') or obj.get('given_title') or url,
+        }
+
+    return {'articles': [build_article(i) for i in items]}
 
 
 @app.delete('/articles/<article_id>')
