@@ -13,6 +13,7 @@ RUN apk add --no-cache python3 python3-dev \
             && pip3 install bottle requests
 COPY api.py .
 
-CMD nohup /bin/sh -c "python3 api.py &" & \
+# https://docs.docker.com/config/containers/multi-service_container/
+CMD python3 api.py & \
         node_modules/.bin/ws -p 3000 --directory build \
         --rewrite '/api/(.*) -> http://localhost:8080/$1'

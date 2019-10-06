@@ -7,7 +7,7 @@ Powered by a Python service using Bottle and a Typescript React frontend. PRs an
 
 ```shell
 docker build -t pocket_retro .
-docker run -p 3000:3000 pocket_retro
+docker run --rm --init -p 3000:3000 pocket
 ```
 
 ![alt text](docs/preview.png "Sick frontend..")
