@@ -1,14 +1,18 @@
 import os
 import json
-import requests
 import bottle
+import requests
+from urllib.parse import urlparse
 
 POCKET_HEADERS = {'X-Accept': 'application/json'}
 
 GET_URL = 'https://getpocket.com/v3/get'
 ARCHIVE_URL = 'https://getpocket.com/v3/send'
+READ_POCKET_URL = 'https://app.getpocket.com/read'
 REQUEST_URL = 'https://getpocket.com/v3/oauth/request'
 AUTHORIZE_URL = 'https://getpocket.com/v3/oauth/authorize'
+
+PAYWALL_DOMAINS = set(['www.economist.com'])
 
 
 class JSONErrorBottle(bottle.Bottle):
@@ -45,7 +49,6 @@ def request_oauth():
     except KeyError:
         bottle.abort(400, 'requires consumer key')
 
-    REDIRECT_URI = 'http://localhost'
     post_body = dict(redirect_uri=redirect_uri, consumer_key=consumer_key)
     rv = requests.post(REQUEST_URL, json=post_body, headers=POCKET_HEADERS)
 
@@ -114,11 +117,14 @@ def get_articles(credentials):
 
     def build_article(obj):
         url = obj.get('resolved_url') or obj.get('given_url')
+        use_pocket_view = (
+            obj['is_article']
+            and urlparse(url).netloc in PAYWALL_DOMAINS)
         return {
-            'url': url,
             'id': obj['item_id'],
             'excerpt': obj.get('excerpt', ''),
             'title': obj.get('resolved_title') or obj.get('given_title') or url,
+            'url': f'{READ_POCKET_URL}/{obj["item_id"]}' if use_pocket_view else url,
         }
 
     return {'articles': [build_article(i) for i in items]}
