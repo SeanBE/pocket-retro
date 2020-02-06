@@ -12,7 +12,7 @@ READ_POCKET_URL = 'https://app.getpocket.com/read'
 REQUEST_URL = 'https://getpocket.com/v3/oauth/request'
 AUTHORIZE_URL = 'https://getpocket.com/v3/oauth/authorize'
 
-PAYWALL_DOMAINS = set(['www.economist.com'])
+PAYWALL_DOMAINS = set(['www.economist.com', 'www.barrons.com'])
 
 
 class JSONErrorBottle(bottle.Bottle):
