@@ -116,14 +116,16 @@ def get_articles(credentials):
         items = []
 
     def build_article(obj):
-        url = obj.get('resolved_url') or obj.get('given_url')
+        print(obj)
+        # TODO: which url is better?
+        url = obj.get('given_url') or obj.get('resolved_url')
         use_pocket_view = (
             obj['is_article']
             and urlparse(url).netloc in PAYWALL_DOMAINS)
         return {
             'id': obj['item_id'],
             'excerpt': obj.get('excerpt', ''),
-            'title': obj.get('resolved_title') or obj.get('given_title') or url,
+            'title': obj.get('given_title') or obj.get('resolved_title') or url,
             'url': f'{READ_POCKET_URL}/{obj["item_id"]}' if use_pocket_view else url,
         }
 
