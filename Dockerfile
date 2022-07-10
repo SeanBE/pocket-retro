@@ -1,19 +1,18 @@
-FROM node:14.17.5-alpine3.14 AS builder
+FROM node:14.20.0-alpine3.16 AS builder
 
-WORKDIR /frontend
+WORKDIR /workspace
+
 COPY frontend .
-RUN npm install && npm run build:style && npm run build
+RUN npm install && npm run build:all
 
-FROM node:14.17.5-alpine3.14
+FROM node:14.20.0-bullseye-slim
 
 WORKDIR /app
-COPY --from=builder /frontend/build /app/build
-RUN apk add --no-cache python3==3.9.5-r1 py3-pip==20.3.4-r1 \
-            && npm add local-web-server@5.1.0 \
-            && pip3 install bottle requests
-COPY api.py .
+COPY --from=builder /workspace/build /app/build
+COPY requirements.txt .
+RUN apt-get update -y && apt-get install -y python3 python3-pip \
+        && npm add --global local-web-server@5.1.0 \
+        && pip3 install -r requirements.txt
 
-# https://docs.docker.com/config/containers/multi-service_container/
-CMD python3 api.py & \
-        node_modules/.bin/ws -p 3000 --directory build \
-        --rewrite '/api/(.*) -> http://localhost:8080/$1'
+COPY api.py start.sh ./
+CMD "./start.sh"
