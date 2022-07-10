@@ -116,11 +116,10 @@ def get_articles(credentials):
         items = []
 
     def build_article(obj):
-        print(obj)
         # TODO: which url is better?
         url = obj.get('given_url') or obj.get('resolved_url')
         use_pocket_view = (
-            obj['is_article']
+            obj.get('is_article' , False)
             and urlparse(url).netloc in PAYWALL_DOMAINS)
         return {
             'id': obj['item_id'],
