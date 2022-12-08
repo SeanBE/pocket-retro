@@ -1,7 +1,7 @@
 appdirs==1.4.4
 bottle==0.12.19
 CacheControl==0.12.6
-certifi==2020.12.5
+certifi==2022.12.7
 chardet==4.0.0
 colorama==0.4.4
 contextlib2==0.6.0
