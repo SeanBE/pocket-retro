@@ -6,7 +6,7 @@ This simple application fetches article links and archives them when you open th
 Powered by a Python service using Bottle and a Typescript React frontend. PRs and issues are welcome!
 
 ```shell
-docker run -d --init -p 127.0.0.1:3210:3000 --name pocket_retro seanbe/pocket_retro
+docker run -d -p 127.0.0.1:3210:8080 --name pocket_retro seanbe/pocket_retro
 ```
 
 Check out [seanbe/pocket_retro](https://hub.docker.com/r/seanbe/pocket_retro) for other tagged images.
