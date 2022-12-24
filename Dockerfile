@@ -1,18 +1,17 @@
-FROM node:14.20.0-alpine3.16 AS builder
+FROM node:18.12.1-alpine3.17 AS builder
 
 WORKDIR /workspace
-
 COPY frontend .
-RUN npm install && npm run build:all
 
-FROM node:14.20.0-bullseye-slim
+RUN npm install && npm run build
+
+FROM python:3.9.16-slim-bullseye
 
 WORKDIR /app
-COPY --from=builder /workspace/build /app/build
+COPY --from=builder /workspace/dist /app/frontend/dist
 COPY requirements.txt .
-RUN apt-get update -y && apt-get install -y python3 python3-pip \
-        && npm add --global local-web-server@5.1.0 \
-        && pip3 install -r requirements.txt
 
-COPY api.py start.sh ./
-CMD "./start.sh"
+RUN pip install -r requirements.txt
+COPY api.py .
+
+CMD ["python", "api.py"]
