@@ -4,12 +4,12 @@ import { Form } from "./components/forms";
 import { Article, ArticleItem } from "./components/articles";
 
 const parseJSON = (response: any) => {
-  return new Promise(resolve =>
+  return new Promise((resolve) =>
     response.json().then((data: any) =>
       resolve({
         status: response.status,
         ok: response.ok,
-        data
+        data,
       })
     )
   );
@@ -27,14 +27,14 @@ const request = (url: string, options: any) => {
         return reject({
           ok: false,
           status: res.status,
-          message: res.data.message
+          message: res.data.message,
         });
       })
-      .catch(error =>
+      .catch((error) =>
         reject({
           ok: false,
           status: null,
-          message: error.message
+          message: error.message,
         })
       );
   });
@@ -46,9 +46,8 @@ const App: React.FC = () => {
   const [allArticles, setArticles]: [Article[], Function] = useState([]);
   const [isFetching, setIsFetching]: [boolean, Function] = useState(false);
   const [errorMessage, setErrorMessage]: [string, Function] = useState("");
-  const [isAuthenticated, setIsAuthenticated]: [boolean, Function] = useState(
-    true
-  );
+  const [isAuthenticated, setIsAuthenticated]: [boolean, Function] =
+    useState(true);
 
   const urlParams = new URLSearchParams(window.location.search);
   const isRedirected = urlParams.get("callback") !== null;
@@ -77,76 +76,62 @@ const App: React.FC = () => {
     }
   }, []);
 
-  useEffect(
-    () => {
-      if (allArticles.length > 0 && articleLimit !== allArticles.length) {
-        fetchArticles();
-      }
-    },
-    [articleLimit]
-  );
+  useEffect(() => {
+    if (allArticles.length > 0 && articleLimit !== allArticles.length) {
+      fetchArticles();
+    }
+  }, [articleLimit]);
 
-  useEffect(
-    () => {
-      // on consumerKey changes. runs multiple times here..
-      if (consumerKey !== null) {
-        setConsumerKey(consumerKey);
-        localStorage.setItem("consumerKey", consumerKey);
-        setIsAuthenticated(true);
-      }
-    },
-    [consumerKey]
-  );
+  useEffect(() => {
+    // on consumerKey changes. runs multiple times here..
+    if (consumerKey !== null) {
+      setConsumerKey(consumerKey);
+      localStorage.setItem("consumerKey", consumerKey);
+      setIsAuthenticated(true);
+    }
+  }, [consumerKey]);
 
-  useEffect(
-    () => {
-      if (consumerKey !== null && !isAuthenticated) {
-        if (!isRedirected) {
-          const callbackURL = new URL(window.location.href);
-          callbackURL.searchParams.append("callback", "");
-          const formData = new FormData();
-          formData.append("consumer_key", consumerKey);
-          formData.append("redirect_uri", callbackURL.toString());
-          request(`/api/oauth/request`, { method: "POST", body: formData })
-            .then((res: any) => {
-              const link = res.data["link"];
-              window.open(link);
-            })
-            .catch(e => {
-              setErrorMessage(
-                "Failed to authenticate. Please see consumer key."
-              );
-            });
-        } else {
-          request(`/api/oauth/authorize`, { method: "POST" })
-            .then((res: any) => {
-              setIsAuthenticated(true);
-            })
-            .catch(e => {
-              console.log(e);
-              setErrorMessage(
-                "Request token was not authorized to obtain access token"
-              );
-            });
-        }
+  useEffect(() => {
+    if (consumerKey !== null && !isAuthenticated) {
+      if (!isRedirected) {
+        const callbackURL = new URL(window.location.href);
+        callbackURL.searchParams.append("callback", "");
+        const formData = new FormData();
+        formData.append("consumer_key", consumerKey);
+        formData.append("redirect_uri", callbackURL.toString());
+        request(`/api/oauth/request`, { method: "POST", body: formData })
+          .then((res: any) => {
+            const link = res.data["link"];
+            window.open(link);
+          })
+          .catch((_) => {
+            setErrorMessage("Failed to authenticate");
+          });
+      } else {
+        request(`/api/oauth/authorize`, { method: "POST" })
+          .then((res: any) => {
+            setIsAuthenticated(true);
+          })
+          .catch((e) => {
+            console.log(e);
+            setErrorMessage(
+              "Request token was not authorized to obtain access token"
+            );
+          });
       }
-    },
-    [consumerKey, isAuthenticated]
-  );
+    }
+  }, [consumerKey, isAuthenticated]);
 
-  useEffect(
-    () => {
-      if (
-        allArticles.length !== 0 ||
-        errorMessage ||
-        !isAuthenticated ||
-        consumerKey === null
-      )
-        return;
-      setIsFetching(true);
-    },
-    [allArticles, errorMessage, isAuthenticated, consumerKey]
-  );
+  useEffect(() => {
+    if (
+      allArticles.length !== 0 ||
+      errorMessage ||
+      !isAuthenticated ||
+      consumerKey === null
+    )
+      return;
+    setIsFetching(true);
+  }, [allArticles, errorMessage, isAuthenticated, consumerKey]);
 
   const fetchArticles = () => {
     return request(`/api/articles?offset=0&limit=${articleLimit}`, {})
@@ -167,16 +152,13 @@ const App: React.FC = () => {
       .then(() => setIsFetching(false));
   };
 
-  useEffect(
-    () => {
-      isFetching && fetchArticles();
-    },
-    [isFetching]
-  );
+  useEffect(() => {
+    isFetching && fetchArticles();
+  }, [isFetching]);
 
   const handleClick = (id: string) => {
     // list will only contain at most 10 elements so filter is fine.
-    setArticles((existing: Article[]) => existing.filter(a => a.id !== id));
+    setArticles((existing: Article[]) => existing.filter((a) => a.id !== id));
     request(`/api/articles/${id}`, { method: "DELETE" }).catch(() =>
       setErrorMessage("Failure to archive article. Check API.")
     );
