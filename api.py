@@ -8,7 +8,7 @@ POCKET_HEADERS = {'X-Accept': 'application/json'}
 
 GET_URL = 'https://getpocket.com/v3/get'
 ARCHIVE_URL = 'https://getpocket.com/v3/send'
-READ_POCKET_URL = 'https://app.getpocket.com/read'
+READ_POCKET_URL = 'https://getpocket.com/read'
 REQUEST_URL = 'https://getpocket.com/v3/oauth/request'
 AUTHORIZE_URL = 'https://getpocket.com/v3/oauth/authorize'
 
