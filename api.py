@@ -1,9 +1,11 @@
 import json
+import logging
 from urllib.parse import urlparse
 
 import bottle
 import requests
 
+FRONTEND_DIST_DIR = "./frontend/dist"
 POCKET_HEADERS = {"X-Accept": "application/json"}
 GET_URL = "https://getpocket.com/v3/get"
 ARCHIVE_URL = "https://getpocket.com/v3/send"
@@ -25,7 +27,26 @@ class JSONErrorBottle(bottle.Bottle):
         )
 
 
-app = JSONErrorBottle()
+app = bottle.Bottle()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+sh = logging.StreamHandler()
+formatter = logging.Formatter("%(asctime)s - %(message)s")
+sh.setFormatter(formatter)
+logger.addHandler(sh)
+
+
+@app.hook("after_request")
+def log_request():
+    req, res = bottle.request, bottle.response
+    logger.info("%s %s (%s)", req.method, req.fullpath, res.status)
+
+
+@app.get("/")
+@app.get("/:filename#(assets/)?.*#")
+def serve_static(filename="index.html"):
+    return bottle.static_file(filename, root=FRONTEND_DIST_DIR)
 
 
 def authenticated(func):
@@ -42,7 +63,11 @@ def authenticated(func):
     return wrapped
 
 
-@app.post("/oauth/request")
+api = JSONErrorBottle()
+app.mount("/api", api)
+
+
+@api.post("/oauth/request")
 def request_oauth():
     forms = bottle.request.forms
     try:
@@ -73,7 +98,7 @@ def request_oauth():
     return {"link": link}
 
 
-@app.post("/oauth/authorize")
+@api.post("/oauth/authorize")
 def authorize_oauth():
     try:
         key = bottle.request.cookies["consumer_key"]
@@ -95,7 +120,7 @@ def authorize_oauth():
     return {}
 
 
-@app.get("/articles")
+@api.get("/articles")
 @authenticated
 def get_articles(credentials):
     query_args = bottle.request.query
@@ -138,7 +163,7 @@ def get_articles(credentials):
     return {"articles": [build_article(i) for i in items]}
 
 
-@app.delete("/articles/<article_id>")
+@api.delete("/articles/<article_id>")
 @authenticated
 def archive_article(credentials, article_id):
     rv = requests.post(
@@ -154,4 +179,10 @@ def archive_article(credentials, article_id):
     return {}
 
 
-app.run(host="0.0.0.0", port=8080)
+try:
+    import cheroot
+
+    server = "cheroot"
+except ImportError:
+    server = "wsgiref"
+app.run(host="0.0.0.0", port=8080, server=server, quiet=True)
