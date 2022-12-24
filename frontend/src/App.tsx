@@ -60,6 +60,12 @@ const App: React.FC = () => {
     localStorage.setItem("articleLimit", limit.toString());
   };
 
+  const removeKey = () => {
+    setConsumerKey(null);
+    setIsAuthenticated(false);
+    localStorage.removeItem("consumerKey");
+  };
+
   useEffect(() => {
     const key = localStorage.getItem("consumerKey");
     if (key !== null) {
@@ -215,21 +221,20 @@ const App: React.FC = () => {
           />
         ))}
         {consumerKey === null && <Form submitValue={setConsumerKey} />}
-        {!isAuthenticated &&
-          consumerKey && (
-            <div className="text-orange-500 font-thin font-base">
-              Attempting to Authenticate...
-            </div>
-          )}
-        {isAuthenticated &&
-          isFetching && (
-            <div className="text-orange-500 font-thin font-base">
-              Loading...
-            </div>
-          )}
+        {!isAuthenticated && consumerKey && (
+          <div className="text-orange-500 font-thin font-base">
+            Attempting to Authenticate...
+          </div>
+        )}
+        {isAuthenticated && isFetching && (
+          <div className="text-orange-500 font-thin font-base">Loading...</div>
+        )}
         {errorMessage && (
           <div className="text-orange-500 font-thin font-base">
-            {errorMessage}
+            {errorMessage}{" "}
+            <span style={{ cursor: "pointer" }} onClick={removeKey}>
+              {"(Reset consumer key?)"}
+            </span>
           </div>
         )}
       </div>
